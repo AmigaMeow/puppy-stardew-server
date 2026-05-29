@@ -511,7 +511,11 @@ fi
 if [ "$ENABLE_VNC" = "true" ]; then
     log_step "Step 6: Starting VNC server..."
 
-    VNC_PASSWORD=${VNC_PASSWORD:-"stardew1"}
+    if [ -z "${VNC_PASSWORD:-}" ]; then
+        VNC_PASSWORD=$(head -c 6 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 8)
+        log_warn "No VNC_PASSWORD set — generated random password: $VNC_PASSWORD"
+        log_warn "未设置 VNC_PASSWORD — 已生成随机密码：$VNC_PASSWORD"
+    fi
 
     if [ ${#VNC_PASSWORD} -gt 8 ]; then
         log_warn "VNC password > 8 chars, truncating to: ${VNC_PASSWORD:0:8}"

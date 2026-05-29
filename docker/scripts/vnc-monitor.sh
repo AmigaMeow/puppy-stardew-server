@@ -32,7 +32,7 @@ log_debug() {
 # VNC configuration
 VNC_PORT="${VNC_PORT:-5900}"
 VNC_DISPLAY="${DISPLAY:-:99}"
-VNC_PASSWORD="${VNC_PASSWORD:-stardew1}"
+VNC_PASSWORD="${VNC_PASSWORD:?VNC_PASSWORD must be set by entrypoint}"
 CHECK_INTERVAL="${VNC_CHECK_INTERVAL:-30}"  # Check every 30 seconds
 
 # Function to check if x11vnc is running properly

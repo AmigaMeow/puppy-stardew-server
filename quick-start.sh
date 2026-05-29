@@ -247,10 +247,11 @@ configure_steam() {
         print_info "Consider using the Steam Guard mobile app for faster codes."
 
         echo ""
-        ask_question "Enter VNC password (max 8 chars, press Enter for default 'stardew1'):"
+        ask_question "Enter VNC password (max 8 chars, press Enter to auto-generate):"
         read -r vnc_password </dev/tty
         if [ -z "$vnc_password" ]; then
-            vnc_password="stardew1"
+            vnc_password=$(head -c 6 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 8)
+            print_info "Generated VNC password: $vnc_password"
         fi
 
         # Validate and truncate VNC password to 8 characters

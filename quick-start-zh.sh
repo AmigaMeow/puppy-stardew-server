@@ -208,10 +208,11 @@ configure_steam() {
         echo ""
 
         echo ""
-        ask_question "请输入 VNC 密码（最多8个字符，按回车使用默认 'stardew1'）："
+        ask_question "请输入 VNC 密码（最多8个字符，按回车自动生成）："
         read -r vnc_password </dev/tty
         if [ -z "$vnc_password" ]; then
-            vnc_password="stardew1"
+            vnc_password=$(head -c 6 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 8)
+            print_info "已生成 VNC 密码：$vnc_password"
         fi
 
         # 验证并截断 VNC 密码为 8 个字符
