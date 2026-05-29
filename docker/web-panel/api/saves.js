@@ -538,7 +538,7 @@ function startBackupJob() {
       progress: 0,
       completedAt: new Date().toISOString(),
       message: 'Backup failed to start',
-      error: error.message,
+      error: config.sanitizeErrorMessage(error.message),
       pid: null,
     });
   });
@@ -797,8 +797,9 @@ function downloadBackup(req, res) {
     return res.status(400).json({ error: 'Invalid filename' });
   }
 
-  const filePath = path.join(config.BACKUPS_DIR, filename);
-  if (!filePath.startsWith(config.BACKUPS_DIR + path.sep)) {
+  const resolvedDir = path.resolve(config.BACKUPS_DIR);
+  const filePath = path.join(resolvedDir, filename);
+  if (!filePath.startsWith(resolvedDir + path.sep)) {
     return res.status(400).json({ error: 'Invalid filename' });
   }
 

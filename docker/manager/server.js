@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
 const { spawn } = require('child_process');
@@ -99,7 +100,9 @@ const server = http.createServer(async (req, res) => {
   if (MANAGER_SECRET) {
     const authHeader = req.headers['authorization'] || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    if (token !== MANAGER_SECRET) {
+    const a = Buffer.from(token);
+    const b = Buffer.from(MANAGER_SECRET);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
       sendJson(res, 401, { error: 'Unauthorized' });
       return;
     }
@@ -118,7 +121,8 @@ const server = http.createServer(async (req, res) => {
       recreateService(service);
       sendJson(res, 202, { success: true, service, action: 'recreate' });
     } catch (error) {
-      sendJson(res, 500, { error: error.message || 'Failed to schedule recreate' });
+      var msg = error.message || 'Failed to schedule recreate';
+      sendJson(res, 500, { error: msg.replace(/\/(?:home|proc|tmp|var|etc|opt|usr)\b\S*/g, '<path>') });
     }
     return;
   }

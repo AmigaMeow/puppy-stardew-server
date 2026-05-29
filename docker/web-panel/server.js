@@ -24,7 +24,7 @@ const ENV_FILE = process.env.ENV_FILE || '/home/steam/web-panel/data/runtime.env
 
 function sanitizeErrorMessage(msg) {
   if (typeof msg !== 'string') return 'Internal error';
-  return msg.replace(/\/home\/\S+/g, '<path>').replace(/\/proc\/\S+/g, '<path>');
+  return msg.replace(/\/(?:home|proc|tmp|var|etc|opt|usr)\b\S*/g, '<path>');
 }
 
 // Export paths for use by API modules
@@ -51,6 +51,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '0');
+  // Only effective behind a TLS-terminating reverse proxy; browsers ignore HSTS over plain HTTP
   res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
@@ -59,8 +60,8 @@ app.use((req, res, next) => {
 });
 
 // Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use(express.json({ limit: '70mb' }));
+app.use(express.urlencoded({ extended: false, limit: '70mb' }));
 
 // ─── Auth Routes (no JWT required) ───────────────────────────────
 app.get('/api/auth/status', auth.getStatus);

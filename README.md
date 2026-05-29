@@ -225,7 +225,7 @@ VNC_PASSWORD=stardew1
 ./init.sh
 
 # Or manual setup
-mkdir -p data/{saves,game,steam,logs,backups,custom-mods}
+mkdir -p data/{saves,game,steam,logs,backups,panel,custom-mods}
 chown -R 1000:1000 data/
 ```
 
