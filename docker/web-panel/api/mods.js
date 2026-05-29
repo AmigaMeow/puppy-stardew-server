@@ -258,7 +258,7 @@ function uploadMod(req, res) {
       ensureDir(CUSTOM_MODS_DIR);
       ensureDir(GAME_MODS_DIR);
     } catch (e) {
-      return res.status(500).json({ error: 'Cannot create mods directory', details: e.message });
+      return res.status(500).json({ error: 'Cannot create mods directory', details: config.sanitizeErrorMessage(e.message) });
     }
 
     var destPath = path.join(CUSTOM_MODS_DIR, filename);

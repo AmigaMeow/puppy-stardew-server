@@ -101,7 +101,7 @@ function getLogs(req, res) {
       exists: true,
     });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to read log file', details: e.message });
+    res.status(500).json({ error: 'Failed to read log file', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 

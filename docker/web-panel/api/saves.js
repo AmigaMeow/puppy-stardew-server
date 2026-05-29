@@ -636,7 +636,7 @@ function getSaves(req, res) {
 
     res.json({ saves, defaultSaveName });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to list saves', details: e.message });
+    res.status(500).json({ error: 'Failed to list saves', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 
@@ -661,7 +661,7 @@ function getBackups(req, res) {
 
     res.json({ backups });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to list backups', details: e.message });
+    res.status(500).json({ error: 'Failed to list backups', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 
@@ -669,7 +669,7 @@ function getBackupStatus(req, res) {
   try {
     res.json(getBackupStatusSnapshot());
   } catch (e) {
-    res.status(500).json({ error: 'Failed to read backup status', details: e.message });
+    res.status(500).json({ error: 'Failed to read backup status', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 
@@ -693,7 +693,7 @@ function createBackup(req, res) {
       status,
     });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to create backup', details: e.message });
+    res.status(500).json({ error: 'Failed to create backup', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 
@@ -759,7 +759,7 @@ function uploadSave(req, res) {
       removePath(tempZip);
     }
   } catch (e) {
-    res.status(500).json({ error: 'Failed to upload save', details: e.message });
+    res.status(500).json({ error: 'Failed to upload save', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 
@@ -785,19 +785,23 @@ function setDefaultSave(req, res) {
       needsRestart: true,
     });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to set default save', details: e.message });
+    res.status(500).json({ error: 'Failed to set default save', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 
 function downloadBackup(req, res) {
-  const filename = req.params.filename;
+  const raw = req.params.filename;
+  const filename = path.basename(raw);
 
-  // Security: prevent path traversal
-  if (filename.includes('..') || filename.includes('/')) {
+  if (!filename || filename !== raw || filename.startsWith('.')) {
     return res.status(400).json({ error: 'Invalid filename' });
   }
 
   const filePath = path.join(config.BACKUPS_DIR, filename);
+  if (!filePath.startsWith(config.BACKUPS_DIR + path.sep)) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Backup not found' });
   }
