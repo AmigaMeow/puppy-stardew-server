@@ -47,33 +47,13 @@ get_uptime_seconds() {
 
 get_player_count() {
     if [ -f "$SMAPI_LOG" ]; then
-        awk '
-            function mark_join(id) {
-                if (id != "" && id != "Server" && id != "SMAPI") connected[id] = 1
-            }
-            function mark_leave(id) {
-                if (id != "") delete connected[id]
-            }
-            match($0, /Received connection for vanilla player ([A-Za-z0-9_]+)/, a) { mark_join(a[1]); next }
-            match($0, /Approved request for farmhand ([A-Za-z0-9_]+)/, a) { mark_join(a[1]); next }
-            match($0, /([A-Za-z0-9_]+) joined the game/, a) { mark_join(a[1]); next }
-            match($0, /farmhand ([A-Za-z0-9_]+) connected/, a) { mark_join(a[1]); next }
-            match($0, /client ([A-Za-z0-9_]+) connected/, a) { mark_join(a[1]); next }
-            match($0, /peer ([A-Za-z0-9_]+) joined/, a) { mark_join(a[1]); next }
-            match($0, /([A-Za-z0-9_]+) connected/, a) { mark_join(a[1]); next }
-            match($0, /([A-Za-z0-9_]+) left the game/, a) { mark_leave(a[1]); next }
-            match($0, /farmhand ([A-Za-z0-9_]+) disconnected/, a) { mark_leave(a[1]); next }
-            match($0, /client ([A-Za-z0-9_]+) disconnected/, a) { mark_leave(a[1]); next }
-            match($0, /peer ([A-Za-z0-9_]+) left/, a) { mark_leave(a[1]); next }
-            match($0, /connection ([A-Za-z0-9_]+) disconnected/, a) { mark_leave(a[1]); next }
-            match($0, /player ([A-Za-z0-9_]+) disconnected/, a) { mark_leave(a[1]); next }
-            match($0, /([A-Za-z0-9_]+) disconnected/, a) { mark_leave(a[1]); next }
-            END {
-                count = 0
-                for (id in connected) count++
-                print count
-            }
-        ' "$SMAPI_LOG" 2>/dev/null || echo "0"
+        local joins
+        joins=$(grep -cE "Approved request for farmhand|Received context for farmhand|joined the game|farmhand connected|peer .* joined" "$SMAPI_LOG" 2>/dev/null || echo 0)
+        local quits
+        quits=$(grep -cE "Player quit:|left the game|farmhand .* disconnected|peer .* left|disconnected" "$SMAPI_LOG" 2>/dev/null || echo 0)
+        local count=$((joins - quits))
+        [ "$count" -lt 0 ] && count=0
+        echo "$count"
     else
         echo "0"
     fi
