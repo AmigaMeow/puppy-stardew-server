@@ -159,7 +159,7 @@ function collectStatus(req = null) {
     season: 'Unknown',
     backupCount: 0,
     modCount: 0,
-    version: 'v1.0.77',
+    version: 'v1.1.0',
     scriptsHealthy: false,
     paused: false,
     events: {
