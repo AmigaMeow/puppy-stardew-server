@@ -398,7 +398,12 @@ show_next_steps() {
     echo -e "${BOLD}4. Optional VNC setup (only if you want manual in-game setup):${NC}"
     echo "   - Download a VNC client (RealVNC, TightVNC, etc.)"
     echo -e "   - Connect to: ${CYAN}$(get_server_ip):5900${NC}"
-    echo -e "   - Password: ${CYAN}$(grep VNC_PASSWORD .env | cut -d'=' -f2)${NC}"
+    _vnc_pw="$(grep '^VNC_PASSWORD=' .env 2>/dev/null | cut -d'=' -f2)"
+    if [ -n "$_vnc_pw" ]; then
+        echo -e "   - Password: ${CYAN}${_vnc_pw}${NC}"
+    else
+        echo -e "   - Password: ${CYAN}auto-generated at startup${NC} (retrieve with: docker exec <container> cat /home/steam/web-panel/data/vnc_password.txt)"
+    fi
     echo "   - Use this if you want to create a new save manually in-game"
     echo "   - Or upload an existing save through the web panel and set it as default"
     echo ""
