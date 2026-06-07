@@ -80,6 +80,15 @@ is_vnc_healthy() {
 start_vnc() {
     log_info "Starting x11vnc server..."
 
+    # Refuse to start without a password: x11vnc treats -passwd "" as no auth,
+    # which would expose VNC unauthenticated. The entrypoint normally exports
+    # VNC_PASSWORD (or writes the password file), so an empty value here means
+    # something upstream failed.
+    if [ -z "$VNC_PASSWORD" ]; then
+        log_error "VNC_PASSWORD is empty (env unset and $VNC_PASSWORD_FILE missing); refusing to start x11vnc without authentication"
+        return 1
+    fi
+
     # Kill any existing x11vnc processes (including zombies)
     # 杀掉所有现存的 x11vnc 进程（包括僵尸进程）
     pkill -9 -f "x11vnc.*$VNC_PORT" 2>/dev/null
