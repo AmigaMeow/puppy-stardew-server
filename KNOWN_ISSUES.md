@@ -6,6 +6,37 @@ This document lists known limitations and issues with workarounds.
 
 ---
 
+## Festivals and Non-Skippable Events Are Not Handled (Fundamental Limitation)
+## 节日与不可跳过事件不被处理（根本性限制）
+
+**Issue / 问题:**
+
+When a festival starts, or when the game triggers a **non-skippable** event/cutscene, the headless host has no human to interact with it and can get **stuck**. While the host is stuck, connected players may be unable to act, effectively freezing the session.
+
+当节日开始，或游戏触发一个**不可跳过的**事件/过场动画时，无头房主没有真人去与之交互，可能会**卡住**。房主卡住期间，已连接的玩家可能无法操作，整局游戏实际上被冻结。
+
+**Why This Happens / 原因:**
+
+Stardew Valley has no real dedicated-server mode — the host is a full game participant. The bundled `AutoHideHost` mod can only skip events that the game itself marks as *skippable* (`Game1.CurrentEvent.skippable`), and it auto-confirms sleep/shipping/ready-check menus. It does **not** implement any festival logic, and it cannot skip events the game marks as non-skippable.
+
+星露谷没有真正的专用服务器模式——房主是一个完整的游戏参与者。捆绑的 `AutoHideHost` 模组只能跳过游戏本身标记为*可跳过*（`Game1.CurrentEvent.skippable`）的事件，并自动确认睡眠/出货/准备检查菜单。它**没有**实现任何节日处理逻辑，也无法跳过游戏标记为不可跳过的事件。
+
+**Workaround / 解决方法:**
+
+- Connect via VNC during a festival or a stuck event and interact with the host manually (advance/close the event).
+- Avoid relying on fully unattended operation across festival days.
+
+- 在节日或卡住的事件期间通过 VNC 连接，手动与房主交互（推进/关闭事件）。
+- 不要指望在有节日的日子里完全无人值守地运行。
+
+**Status / 状态:**
+
+This is a fundamental limitation of running an unattended headless host, not a fixable bug. A robust solution requires a **human-hosted** game instead of an unattended host. See the "Project Status" section in the README for the recommended direction.
+
+这是"无人值守无头房主"这一架构的根本性限制，而不是一个可修复的 bug。稳健的方案需要改为**真人当房主**，而不是无人值守的房主。推荐方向见 README 的"项目状态"一节。
+
+---
+
 ## Container Restart - Manual Save Reload Required
 ## 容器重启 - 需要手动重新加载存档
 
