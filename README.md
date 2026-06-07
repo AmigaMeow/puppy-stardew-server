@@ -27,6 +27,20 @@ English | [中文](README_CN.md)
 
 ---
 
+## Project Status: Feature-Frozen (Best-Effort Maintenance)
+
+> **This project is feature-frozen and maintained on a best-effort basis.** It remains usable and accepts security/compatibility fixes, but no new features are planned.
+
+**What this project is.** A Dockerized, *always-on dedicated host* for Stardew Valley. The container runs the actual game and acts as the multiplayer host. This works well for casual day-to-day play and for keeping a world available 24/7.
+
+**The fundamental limitation you should understand before relying on it.** Stardew Valley has no real "dedicated server" concept — **the host is a full game participant**, not a passive server process. Whenever the game takes control of the host (festivals, non-skippable events, certain cutscenes, forced animations), an unattended headless host can stall, which blocks connected players. The bundled mods paper over the common cases (hiding the host, instant sleep, skipping *skippable* events) but **cannot fully solve this** — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md). In particular, **festivals and non-skippable events are not handled**, and a container restart currently requires a one-time manual save reload to re-init multiplayer.
+
+**Best fit:** hobbyist setups that want a 24/7 persistent world and accept best-effort behavior with occasional manual intervention.
+
+**If your goal is simply "let a few friends play together easily across platforms (PC / Mac / Android / iOS)",** a *human-hosted* game combined with a virtual-LAN / relay layer (so clients join over IP across NAT) is far more robust, because a real human at the host handles festivals and events naturally. That direction avoids the engine limitations above entirely.
+
+---
+
 ## Overview
 
 Puppy Stardew Server packages Stardew Valley, SMAPI, and a curated server-oriented mod stack into a Docker-based deployment workflow. The project is designed for operators who want a repeatable multiplayer server setup with persistent data, predictable restart behavior, and a web-based management surface.
@@ -211,7 +225,9 @@ nano .env  # or use your favorite editor
 STEAM_USERNAME=your_steam_username
 STEAM_PASSWORD=your_steam_password
 ENABLE_VNC=true
-VNC_PASSWORD=stardew1
+# Leave blank to auto-generate a random password at startup
+# (retrieve with: docker exec <container> cat /home/steam/web-panel/data/vnc_password.txt)
+VNC_PASSWORD=
 ```
 
 **Important**: You MUST own Stardew Valley on Steam. Game files are downloaded via your account.
@@ -273,7 +289,7 @@ Access the web panel at `http://your-server-ip:18642`
 
 1. **Connect to VNC:**
    - Address: `your-server-ip:5900`
-   - Password: The `VNC_PASSWORD` from your `.env` file
+   - Password: the `VNC_PASSWORD` from your `.env` file. If you left it blank, a random password is generated at startup — retrieve it with `docker exec <container> cat /home/steam/web-panel/data/vnc_password.txt`
    - VNC Client: [RealVNC](https://www.realvnc.com/en/connect/download/viewer/), [TightVNC](https://www.tightvnc.com/), or any VNC viewer
 
 2. **In the VNC window:**

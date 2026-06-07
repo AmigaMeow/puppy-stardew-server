@@ -74,7 +74,9 @@ services:
       # VNC settings - OPTIONAL (for first-time setup)
       # VNC 设置 - 可选（用于首次设置）
       - ENABLE_VNC=${ENABLE_VNC:-true}
-      - VNC_PASSWORD=${VNC_PASSWORD:-stardew1}
+      # Leave blank to auto-generate a random password at startup
+      # (written to web-panel/data/vnc_password.txt inside the container).
+      - VNC_PASSWORD=${VNC_PASSWORD:-}
 
       # Log monitoring - OPTIONAL (default: enabled)
       # 日志监控 - 可选（默认：启用）

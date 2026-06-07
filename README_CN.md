@@ -27,6 +27,20 @@
 
 ---
 
+## 项目状态：功能冻结（best-effort 维护）
+
+> **本项目已功能冻结，仅按 best-effort 维护。** 仍可继续使用，也会接受安全/兼容性修复，但不再规划新功能。
+
+**这个项目是什么。** 一个 Docker 化的、**24/7 常驻的星露谷专用房主**。容器内运行真实游戏并充当联机房主，适合日常休闲联机以及让世界 24 小时保持在线。
+
+**在依赖它之前，你必须理解的根本局限。** 星露谷没有真正的"专用服务器"概念——**房主是一个完整的游戏参与者**，而不是一个被动的服务器进程。每当游戏夺走房主的控制权（节日、不可跳过的事件、某些过场动画、强制动画）时，一个无人值守的无头房主就可能卡住，进而导致已连接的玩家也无法操作。捆绑的模组只能缓解常见情况（隐藏房主、即时睡眠、跳过*可跳过*的事件），但**无法彻底解决**——详见 [KNOWN_ISSUES.md](KNOWN_ISSUES.md)。其中，**节日和不可跳过的事件完全没有被处理**，且容器重启后目前需要手动重新加载一次存档才能重新初始化联机。
+
+**最适合的场景：** 想要一个 24/7 持久世界、并能接受 best-effort 表现（偶尔需要人工介入）的爱好者部署。
+
+**如果你的目标只是"让几个朋友跨平台（PC / Mac / 安卓 / iOS）轻松一起玩"，** 那么"**真人当房主** + 虚拟局域网/中转层（让客户端通过 IP 穿过 NAT 加入）"的方案要稳健得多——因为房主端有真人，节日和事件都能自然处理，从而完全绕开上面这些引擎层面的局限。
+
+---
+
 ## 项目概述
 
 Puppy Stardew Server 将 Stardew Valley、SMAPI 和一组面向服务器运行场景的模组整合到 Docker 部署流程中，目标是提供一个可重复部署、可持久化、可运维的联机服务器方案。
@@ -220,7 +234,8 @@ services:
       - STEAM_USERNAME=${STEAM_USERNAME}
       - STEAM_PASSWORD=${STEAM_PASSWORD}
       - ENABLE_VNC=${ENABLE_VNC:-true}
-      - VNC_PASSWORD=${VNC_PASSWORD:-stardew1}
+      # 留空则启动时自动生成随机密码（写入容器内 web-panel/data/vnc_password.txt）
+      - VNC_PASSWORD=${VNC_PASSWORD:-}
     ports:
       - "24642:24642/udp"
       - "5900:5900/tcp"
@@ -250,7 +265,9 @@ STEAM_PASSWORD=your_steam_password
 
 # VNC 配置（可选）
 ENABLE_VNC=true
-VNC_PASSWORD=stardew1
+# 留空则启动时自动生成随机密码
+# （用 docker exec <容器> cat /home/steam/web-panel/data/vnc_password.txt 读取）
+VNC_PASSWORD=
 EOF
 ```
 
@@ -317,7 +334,7 @@ docker attach puppy-stardew
 
 1. **连接到 VNC：**
    - 地址：`服务器IP:5900`
-   - 密码：您在 `.env` 文件中设置的 `VNC_PASSWORD`
+   - 密码：您在 `.env` 文件中设置的 `VNC_PASSWORD`；若留空，则启动时自动生成随机密码，用 `docker exec <容器> cat /home/steam/web-panel/data/vnc_password.txt` 读取
    - VNC 客户端：[RealVNC](https://www.realvnc.com/en/connect/download/viewer/)、[TightVNC](https://www.tightvnc.com/) 或任何 VNC 查看器
 
 2. **在 VNC 窗口中：**
