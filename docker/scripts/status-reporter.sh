@@ -48,9 +48,9 @@ get_uptime_seconds() {
 get_player_count() {
     if [ -f "$SMAPI_LOG" ]; then
         local joins
-        joins=$(grep -cE "Approved request for farmhand|joined the game|farmhand connected|peer .* joined" "$SMAPI_LOG" 2>/dev/null || echo 0)
+        joins=$(grep -cE "Approved request for farmhand|joined the game|farmhand connected|peer .* joined" "$SMAPI_LOG" 2>/dev/null) || joins=0
         local quits
-        quits=$(grep -cE "Player quit:|left the game|farmhand .* disconnected|peer .* left|disconnected" "$SMAPI_LOG" 2>/dev/null || echo 0)
+        quits=$(grep -cE "Player quit:|left the game|farmhand .* disconnected|peer .* left|disconnected" "$SMAPI_LOG" 2>/dev/null) || quits=0
         local count=$((joins - quits))
         [ "$count" -lt 0 ] && count=0
         echo "$count"
