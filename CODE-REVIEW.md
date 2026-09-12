@@ -2,6 +2,11 @@
 
 Date: 2026-03-09
 
+> **Update (wrap-up):** The three High-severity findings (#1, #2, #3) have been
+> addressed. See the per-finding **Status** notes below. The Medium/Low items
+> remain open and are documented for future reference (the project is now
+> feature-frozen — see the README "Project Status" section).
+
 ## Findings
 
 ### 1. High: `PUT /api/config` allows arbitrary `.env` injection and persistence of unsupported keys
@@ -24,6 +29,8 @@ Recommended fix:
 - reject `\r` / `\n` in keys and values before writing,
 - write through a temp file and rename to avoid partial writes.
 
+**Status: Resolved.** `updateConfig()` now builds the write set strictly from the `CONFIG_SCHEMA` allowlist (unknown keys are ignored), rejects values containing CR/LF, and `writeEnvFile()` writes atomically via a temp file + rename with a defensive CR/LF guard.
+
 ### 2. High: the panel still ships with a known default password and logs it in plaintext
 
 Files:
@@ -41,6 +48,8 @@ Recommended fix:
 - never print panel secrets to logs,
 - update docs and compose examples to stop advertising a shared default secret.
 
+**Status: Resolved (in an earlier release).** `auth.js` now requires a first-run setup flow (`needsSetup`, `passwordHash: null`) with no `admin123` fallback, and `server.js` no longer prints the panel password. Verified no `admin123` references remain in code.
+
 ### 3. High: VNC access defaults to a weak password and the password is echoed to logs
 
 Files:
@@ -54,6 +63,8 @@ Recommended fix:
 - require an explicit VNC password when VNC is enabled or generate a one-time secret,
 - stop logging the password,
 - document VNC as an optional, temporary setup surface rather than a default-on service.
+
+**Status: Resolved.** When `VNC_PASSWORD` is unset, `entrypoint.sh` now generates a random password at startup and writes it to `web-panel/data/vnc_password.txt` (mode 0600) instead of printing it to logs. The weak `stardew1` default was removed from `entrypoint.sh`, `vnc-monitor.sh`, `docker-compose.yml`, `.env.example`, the config-panel schema, and the README examples.
 
 ### 4. Medium: backup downloads from the UI are broken, and the current token flow would leak if fixed naively
 

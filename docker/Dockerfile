@@ -14,7 +14,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 LABEL maintainer="truemanlive" \
       description="Stardew Valley dedicated server with auto-pause and instant sleep" \
-      version="1.0.77"
+      version="1.1.0"
 
 # Install all dependencies in a single layer and clean up
 # 在单层中安装所有依赖并清理
@@ -70,7 +70,7 @@ USER steam
 # 在单层中下载 SteamCMD 和 SMAPI，清理下载文件
 RUN wget -qO- 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz' | \
     tar zxvf - -C /home/steam/steamcmd && \
-    wget -qO smapi.zip 'https://github.com/Pathoschild/SMAPI/releases/download/4.3.2/SMAPI-4.3.2-installer.zip' && \
+    wget -qO smapi.zip 'https://github.com/Pathoschild/SMAPI/releases/download/4.5.2/SMAPI-4.5.2-installer.zip' && \
     unzip -q smapi.zip -d smapi && \
     rm smapi.zip
 

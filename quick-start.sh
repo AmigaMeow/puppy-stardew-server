@@ -247,17 +247,18 @@ configure_steam() {
         print_info "Consider using the Steam Guard mobile app for faster codes."
 
         echo ""
-        ask_question "Enter VNC password (max 8 chars, press Enter to auto-generate):"
+        ask_question "Enter VNC password (max 8 chars, press Enter to auto-generate a random one):"
         read -r vnc_password </dev/tty
         if [ -z "$vnc_password" ]; then
-            vnc_password=$(head -c 6 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 8)
-            print_info "Generated VNC password: $vnc_password"
+            vnc_password="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom 2>/dev/null | head -c 8)"
+            print_info "Generated a random VNC password: ${vnc_password}"
+            print_info "Save it now — you'll need it to connect via VNC."
         fi
 
         # Validate and truncate VNC password to 8 characters
         if [ ${#vnc_password} -gt 8 ]; then
             print_warning "VNC password is longer than 8 characters!"
-            print_warning "VNC protocol will truncate it to: ${vnc_password:0:8}"
+            print_warning "VNC protocol will truncate it to 8 characters."
             vnc_password="${vnc_password:0:8}"
         fi
 
@@ -397,7 +398,12 @@ show_next_steps() {
     echo -e "${BOLD}4. Optional VNC setup (only if you want manual in-game setup):${NC}"
     echo "   - Download a VNC client (RealVNC, TightVNC, etc.)"
     echo -e "   - Connect to: ${CYAN}$(get_server_ip):5900${NC}"
-    echo -e "   - Password: ${CYAN}$(grep VNC_PASSWORD .env | cut -d'=' -f2)${NC}"
+    _vnc_pw="$(grep '^VNC_PASSWORD=' .env 2>/dev/null | cut -d'=' -f2)"
+    if [ -n "$_vnc_pw" ]; then
+        echo -e "   - Password: ${CYAN}${_vnc_pw}${NC}"
+    else
+        echo -e "   - Password: ${CYAN}auto-generated at startup${NC} (retrieve with: docker exec <container> cat /home/steam/web-panel/data/vnc_password.txt)"
+    fi
     echo "   - Use this if you want to create a new save manually in-game"
     echo "   - Or upload an existing save through the web panel and set it as default"
     echo ""

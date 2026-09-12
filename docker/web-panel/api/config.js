@@ -14,7 +14,7 @@ const CONFIG_SCHEMA = {
   ],
   'VNC': [
     { key: 'ENABLE_VNC', label: 'Enable VNC', type: 'boolean', default: 'true' },
-    { key: 'VNC_PASSWORD', label: 'VNC Password', type: 'password', viewable: true, default: 'stardew1', maxLength: 8 },
+    { key: 'VNC_PASSWORD', label: 'VNC Password', type: 'password', viewable: true, default: '', maxLength: 8 },
   ],
   'Display': [
     { key: 'RESOLUTION_WIDTH', label: 'Resolution Width', type: 'number', default: '1280' },
@@ -153,6 +153,14 @@ function writeEnvFile(envData) {
   const envPath = findEnvFile();
   if (!envPath) throw new Error('.env file not found');
 
+  // Defense in depth: never write a key or value containing CR/LF, which would
+  // let a single entry inject additional environment variables.
+  for (const [key, value] of Object.entries(envData)) {
+    if (/[\r\n]/.test(key) || /[\r\n]/.test(String(value))) {
+      throw new Error(`Refusing to write env entry with line breaks: ${key}`);
+    }
+  }
+
   const envDir = path.dirname(envPath);
   if (!fs.existsSync(envDir)) {
     fs.mkdirSync(envDir, { recursive: true });
@@ -194,7 +202,10 @@ function writeEnvFile(envData) {
     }
   }
 
-  fs.writeFileSync(envPath, newLines.join('\n'), 'utf-8');
+  // Write atomically via a temp file + rename to avoid partial/corrupt writes.
+  const tmpPath = `${envPath}.tmp-${process.pid}`;
+  fs.writeFileSync(tmpPath, newLines.join('\n'), 'utf-8');
+  fs.renameSync(tmpPath, envPath);
 }
 
 // ─── Route Handlers ──────────────────────────────────────────────
@@ -269,19 +280,37 @@ function updateConfig(req, res) {
       }
     }
 
-    const normalizedUpdates = { ...updates };
-    if (Object.prototype.hasOwnProperty.call(normalizedUpdates, 'ENABLE_VNC')) {
-      normalizedUpdates.VNC_BIND_HOST = normalizedUpdates.ENABLE_VNC === 'true' ? '0.0.0.0' : '127.0.0.1';
-    }
-
+    // Build the write set strictly from the known schema (allowlist). Keys that
+    // are not part of CONFIG_SCHEMA are ignored rather than persisted, which
+    // prevents arbitrary .env injection through this endpoint.
+    const normalizedUpdates = {};
     for (const [key, field] of fieldMap.entries()) {
-      if (!Object.prototype.hasOwnProperty.call(normalizedUpdates, key)) {
+      if (!Object.prototype.hasOwnProperty.call(updates, key)) {
         continue;
       }
 
-      if (field.preserveIfBlank && normalizedUpdates[key] === '') {
-        delete normalizedUpdates[key];
+      let value = updates[key];
+      if (value === undefined || value === null) {
+        continue;
       }
+      value = String(value);
+
+      // Reject CR/LF so a value cannot smuggle in extra variables.
+      if (/[\r\n]/.test(value)) {
+        return res.status(400).json({ error: `Field '${key}' contains invalid line breaks` });
+      }
+
+      // Blank value on a preserve-if-blank field (e.g. STEAM_PASSWORD) keeps the existing value.
+      if (field.preserveIfBlank && value === '') {
+        continue;
+      }
+
+      normalizedUpdates[key] = value;
+    }
+
+    // Derived, server-managed key (not accepted directly from the client).
+    if (Object.prototype.hasOwnProperty.call(normalizedUpdates, 'ENABLE_VNC')) {
+      normalizedUpdates.VNC_BIND_HOST = normalizedUpdates.ENABLE_VNC === 'true' ? '0.0.0.0' : '127.0.0.1';
     }
 
     writeEnvFile(normalizedUpdates);

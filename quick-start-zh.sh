@@ -208,17 +208,18 @@ configure_steam() {
         echo ""
 
         echo ""
-        ask_question "请输入 VNC 密码（最多8个字符，按回车自动生成）："
+        ask_question "请输入 VNC 密码（最多8个字符，按回车自动生成随机密码）："
         read -r vnc_password </dev/tty
         if [ -z "$vnc_password" ]; then
-            vnc_password=$(head -c 6 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 8)
-            print_info "已生成 VNC 密码：$vnc_password"
+            vnc_password="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom 2>/dev/null | head -c 8)"
+            print_info "已生成随机 VNC 密码：${vnc_password}"
+            print_info "请立即保存——连接 VNC 时需要它。"
         fi
 
         # 验证并截断 VNC 密码为 8 个字符
         if [ ${#vnc_password} -gt 8 ]; then
             print_warning "VNC 密码超过 8 个字符！"
-            print_warning "VNC 协议会自动截断为：${vnc_password:0:8}"
+            print_warning "VNC 协议会自动截断为 8 个字符。"
             vnc_password="${vnc_password:0:8}"
         fi
 
@@ -383,7 +384,12 @@ print_next_steps() {
     echo -e "${BOLD}4. 可选的 VNC 初始设置（仅在需要手动进游戏时使用）：${NC}"
     echo "   - 下载 VNC 客户端（RealVNC、TightVNC 等）"
     echo -e "   - 连接到: ${CYAN}$(get_server_ip):5900${NC}"
-    echo -e "   - 密码: ${CYAN}$(grep VNC_PASSWORD .env 2>/dev/null | cut -d'=' -f2 || echo 'stardew123')${NC}"
+    _vnc_pw="$(grep '^VNC_PASSWORD=' .env 2>/dev/null | cut -d'=' -f2)"
+    if [ -n "$_vnc_pw" ]; then
+        echo -e "   - 密码: ${CYAN}${_vnc_pw}${NC}"
+    else
+        echo -e "   - 密码: ${CYAN}启动时自动生成${NC}（用 docker exec <容器> cat /home/steam/web-panel/data/vnc_password.txt 读取）"
+    fi
     echo "   - 如果你想手动在游戏内创建新存档，可以使用 VNC"
     echo "   - 或者直接在 Web 面板上传现有存档并设为默认自动加载"
     echo ""

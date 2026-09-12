@@ -1,6 +1,6 @@
 #!/bin/bash
-# Puppy Stardew Server Entrypoint Script - v1.0.77
-# 小狗星谷服务器启动脚本 - v1.0.77
+# Puppy Stardew Server Entrypoint Script - v1.1.0
+# 小狗星谷服务器启动脚本 - v1.1.0
 
 # DO NOT use set -e - we need manual error handling
 # 不使用 set -e - 需要手动错误处理
@@ -342,8 +342,8 @@ fi
 # =============================================
 
 log_step "================================================"
-log_step "  Puppy Stardew Server v1.0.77 Starting..."
-log_step "  小狗星谷服务器 v1.0.77 启动中..."
+log_step "  Puppy Stardew Server v1.1.0 Starting..."
+log_step "  小狗星谷服务器 v1.1.0 启动中..."
 log_step "================================================"
 
 # Verify we're running as steam user
@@ -511,15 +511,26 @@ fi
 if [ "$ENABLE_VNC" = "true" ]; then
     log_step "Step 6: Starting VNC server..."
 
-    if [ -z "${VNC_PASSWORD:-}" ]; then
-        VNC_PASSWORD=$(head -c 6 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 8)
-        log_warn "No VNC_PASSWORD set — generated random password: $VNC_PASSWORD"
-        log_warn "未设置 VNC_PASSWORD — 已生成随机密码：$VNC_PASSWORD"
+    # Do not ship a weak well-known default. If no password is provided, generate
+    # a random one at runtime and persist it to a protected file for the operator.
+    VNC_PASSWORD_FILE="/home/steam/web-panel/data/vnc_password.txt"
+    VNC_PASSWORD_GENERATED=false
+    if [ -z "$VNC_PASSWORD" ]; then
+        VNC_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom 2>/dev/null | head -c 8)
+        VNC_PASSWORD_GENERATED=true
     fi
 
     if [ ${#VNC_PASSWORD} -gt 8 ]; then
-        log_warn "VNC password > 8 chars, truncating to: ${VNC_PASSWORD:0:8}"
+        log_warn "VNC password > 8 chars, truncating to 8 characters (x11vnc limit)"
         VNC_PASSWORD="${VNC_PASSWORD:0:8}"
+    fi
+
+    # Persist the effective password to a 0600 file so the monitor and operator
+    # can read it without printing the secret to container logs.
+    export VNC_PASSWORD
+    mkdir -p "$(dirname "$VNC_PASSWORD_FILE")" 2>/dev/null || true
+    if printf '%s' "$VNC_PASSWORD" > "$VNC_PASSWORD_FILE" 2>/dev/null; then
+        chmod 600 "$VNC_PASSWORD_FILE" 2>/dev/null || true
     fi
 
     # Wait for X server to be fully ready
@@ -535,7 +546,11 @@ if [ "$ENABLE_VNC" = "true" ]; then
     # Verify VNC is running
     if pgrep -x "x11vnc" >/dev/null; then
         log_info "✓ VNC server started successfully on port 5900"
-        log_info "  Password: $VNC_PASSWORD"
+        if [ "$VNC_PASSWORD_GENERATED" = "true" ]; then
+            log_info "  A random VNC password was generated (VNC_PASSWORD was not set)."
+        fi
+        log_info "  Password stored at: $VNC_PASSWORD_FILE (not printed to logs)"
+        log_info "  Retrieve it with: docker exec <container> cat $VNC_PASSWORD_FILE"
         log_info "  Connect to: your-server-ip:5900"
 
         # Start VNC monitor to keep it alive

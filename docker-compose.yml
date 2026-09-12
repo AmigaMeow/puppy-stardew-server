@@ -75,6 +75,8 @@ services:
       # VNC settings - OPTIONAL (for first-time setup)
       # VNC 设置 - 可选（用于首次设置）
       - ENABLE_VNC=${ENABLE_VNC:-true}
+      # Leave blank to auto-generate a random password at startup
+      # (written to web-panel/data/vnc_password.txt inside the container).
       - VNC_PASSWORD=${VNC_PASSWORD:-}
 
       # Log monitoring - OPTIONAL (default: enabled)
@@ -117,6 +119,7 @@ services:
       - PUBLIC_IP=${PUBLIC_IP:-}
       - MANAGER_URL=${MANAGER_URL:-http://stardew-manager:18700}
       - MANAGER_SECRET=${MANAGER_SECRET:-}
+      - API_RATE_LIMIT=${API_RATE_LIMIT:-}
 
     # Port mappings
     # 端口映射

@@ -32,7 +32,12 @@ log_debug() {
 # VNC configuration
 VNC_PORT="${VNC_PORT:-5900}"
 VNC_DISPLAY="${DISPLAY:-:99}"
-VNC_PASSWORD="${VNC_PASSWORD:?VNC_PASSWORD must be set by entrypoint}"
+# Prefer the inherited VNC_PASSWORD; otherwise read the password file written by
+# entrypoint.sh. No weak well-known default is used.
+VNC_PASSWORD_FILE="${VNC_PASSWORD_FILE:-/home/steam/web-panel/data/vnc_password.txt}"
+if [ -z "$VNC_PASSWORD" ] && [ -f "$VNC_PASSWORD_FILE" ]; then
+    VNC_PASSWORD="$(cat "$VNC_PASSWORD_FILE" 2>/dev/null)"
+fi
 CHECK_INTERVAL="${VNC_CHECK_INTERVAL:-30}"  # Check every 30 seconds
 
 # Function to check if x11vnc is running properly
@@ -74,6 +79,15 @@ is_vnc_healthy() {
 # 启动/重启 x11vnc
 start_vnc() {
     log_info "Starting x11vnc server..."
+
+    # Refuse to start without a password: x11vnc treats -passwd "" as no auth,
+    # which would expose VNC unauthenticated. The entrypoint normally exports
+    # VNC_PASSWORD (or writes the password file), so an empty value here means
+    # something upstream failed.
+    if [ -z "$VNC_PASSWORD" ]; then
+        log_error "VNC_PASSWORD is empty (env unset and $VNC_PASSWORD_FILE missing); refusing to start x11vnc without authentication"
+        return 1
+    fi
 
     # Kill any existing x11vnc processes (including zombies)
     # 杀掉所有现存的 x11vnc 进程（包括僵尸进程）

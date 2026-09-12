@@ -317,7 +317,7 @@ function uploadMod(req, res) {
       });
     }
   } catch (e) {
-    res.status(500).json({ error: 'Upload failed: ' + e.message });
+    res.status(500).json({ error: 'Upload failed: ' + config.sanitizeErrorMessage(e.message) });
   }
 }
 
@@ -374,7 +374,7 @@ function deleteMod(req, res) {
 
     res.json({ success: true, message: 'Mod deleted successfully', needsRestart: true });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to delete mod: ' + e.message });
+    res.status(500).json({ error: 'Failed to delete mod: ' + config.sanitizeErrorMessage(e.message) });
   }
 }
 

@@ -159,7 +159,7 @@ function collectStatus(req = null) {
     season: 'Unknown',
     backupCount: 0,
     modCount: 0,
-    version: 'v1.0.77',
+    version: 'v1.1.0',
     scriptsHealthy: false,
     paused: false,
     events: {
@@ -224,22 +224,25 @@ function collectStatus(req = null) {
     const pidStr = execSync('pgrep -f StardewModdingAPI', { encoding: 'utf-8' }).trim().split('\n')[0];
     status.gameRunning = true;
 
+    // Only use pgrep output in commands when it is a bare numeric PID
+    const pid = /^\d+$/.test(pidStr) ? pidStr : '';
+
     // If we didn't get data from status.json, collect live
-    if (status.cpu === 0 && status.memory.used === 0 && pidStr) {
+    if (status.cpu === 0 && status.memory.used === 0 && pid) {
       try {
-        const cpuStr = execSync('ps -p ' + pidStr + ' -o %cpu= 2>/dev/null', { encoding: 'utf-8' }).trim();
+        const cpuStr = execSync('ps -p ' + pid + ' -o %cpu= 2>/dev/null', { encoding: 'utf-8' }).trim();
         status.cpu = parseFloat(cpuStr) || 0;
       } catch (e2) {}
       try {
-        const rssStr = execSync('grep VmRSS /proc/' + pidStr + '/status 2>/dev/null | awk \'{print $2}\'', { encoding: 'utf-8' }).trim();
+        const rssStr = execSync('grep VmRSS /proc/' + pid + '/status 2>/dev/null | awk \'{print $2}\'', { encoding: 'utf-8' }).trim();
         if (rssStr) status.memory.used = Math.round(parseInt(rssStr, 10) / 1024);
       } catch (e2) {}
     }
 
     // If no uptime from status.json, compute from process start time
-    if (status.uptime === 0 && pidStr) {
+    if (status.uptime === 0 && pid) {
       try {
-        const startTime = execSync('stat -c %Y /proc/' + pidStr + ' 2>/dev/null', { encoding: 'utf-8' }).trim();
+        const startTime = execSync('stat -c %Y /proc/' + pid + ' 2>/dev/null', { encoding: 'utf-8' }).trim();
         if (startTime) status.uptime = Math.floor(Date.now() / 1000) - parseInt(startTime, 10);
       } catch (e2) {}
     }
