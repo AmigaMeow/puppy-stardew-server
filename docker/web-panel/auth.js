@@ -141,6 +141,26 @@ function verifyToken(token) {
   }
 }
 
+function signDownloadToken(filename) {
+  return jwt.sign(
+    { purpose: 'download', filename, iat: Math.floor(Date.now() / 1000) },
+    panelConfig.jwtSecret,
+    { expiresIn: '60s' }
+  );
+}
+
+function verifyDownloadToken(token, filename) {
+  if (!panelConfig || !panelConfig.jwtSecret) {
+    return false;
+  }
+  try {
+    const payload = jwt.verify(token, panelConfig.jwtSecret);
+    return payload.purpose === 'download' && payload.filename === filename;
+  } catch (e) {
+    return false;
+  }
+}
+
 // ─── Route Handlers ──────────────────────────────────────────────
 
 /**
@@ -304,7 +324,7 @@ async function changePassword(req, res) {
 }
 
 /**
- * Express middleware to verify JWT
+ * Express middleware to verify JWT (header only — tokens in query strings are not accepted)
  */
 function verifyMiddleware(req, res, next) {
   if (!panelConfig || !panelConfig.jwtSecret) {
@@ -312,18 +332,11 @@ function verifyMiddleware(req, res, next) {
   }
 
   const authHeader = req.headers.authorization;
-  let token = '';
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.slice(7);
-  } else if (req.query && typeof req.query.token === 'string' && req.query.token) {
-    token = req.query.token;
-  }
-
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
   }
 
+  const token = authHeader.slice(7);
   try {
     jwt.verify(token, panelConfig.jwtSecret);
     next();
@@ -341,4 +354,6 @@ module.exports = {
   changePassword,
   verifyMiddleware,
   verifyToken,
+  signDownloadToken,
+  verifyDownloadToken,
 };

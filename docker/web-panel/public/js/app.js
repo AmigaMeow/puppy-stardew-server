@@ -720,11 +720,22 @@ async function loadSaves() {
             <div class="save-name">${icon('package', 'icon save-name-icon')}<span>${escapeHtml(b.filename)}</span></div>
             <div class="save-meta">${formatSize(b.size)} · ${new Date(b.date).toLocaleString(currentLang === 'zh' ? 'zh-CN' : 'en-US')}</div>
           </div>
-          <a href="/api/saves/download/${encodeURIComponent(b.filename)}" class="btn btn-sm btn-primary"
-             onclick="this.href=this.href.split('?')[0]+'?token='+API.token; return true;">${icon('download', 'icon')}</a>
+          <a href="#" class="btn btn-sm btn-primary" onclick="downloadBackup('${escapeHtml(b.filename)}', event); return false;">${icon('download', 'icon')}</a>
         </div>
       `).join('');
     }
+  }
+}
+
+async function downloadBackup(filename, event) {
+  if (event) event.preventDefault();
+  try {
+    var data = await API.post('/api/saves/download-token', { filename: filename });
+    if (data && data.token) {
+      window.location.href = '/api/saves/download/' + encodeURIComponent(filename) + '?token=' + data.token;
+    }
+  } catch (e) {
+    showToast(t('saves.downloadFailed') || 'Download failed', 'error');
   }
 }
 

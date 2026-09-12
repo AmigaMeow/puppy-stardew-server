@@ -63,6 +63,40 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '70mb' }));
 app.use(express.urlencoded({ extended: false, limit: '70mb' }));
 
+// ─── API Rate Limiting ──────────────────────────────────────────
+const apiHits = new Map(); // ip -> { count, resetAt }
+const API_RATE_WINDOW_MS = 60 * 1000;
+const API_RATE_MAX = parseInt(process.env.API_RATE_LIMIT || '120', 10);
+
+function apiRateLimiter(req, res, next) {
+  if (!req.path.startsWith('/api/')) return next();
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  let bucket = apiHits.get(ip);
+  if (!bucket || now >= bucket.resetAt) {
+    bucket = { count: 0, resetAt: now + API_RATE_WINDOW_MS };
+    apiHits.set(ip, bucket);
+  }
+  bucket.count += 1;
+  res.setHeader('X-RateLimit-Limit', API_RATE_MAX);
+  res.setHeader('X-RateLimit-Remaining', Math.max(0, API_RATE_MAX - bucket.count));
+  if (bucket.count > API_RATE_MAX) {
+    const retryAfter = Math.ceil((bucket.resetAt - now) / 1000);
+    res.setHeader('Retry-After', retryAfter);
+    return res.status(429).json({ error: 'Too many requests, try again later' });
+  }
+  next();
+}
+app.use(apiRateLimiter);
+
+// Periodically clean up stale rate-limit entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, bucket] of apiHits) {
+    if (now >= bucket.resetAt) apiHits.delete(ip);
+  }
+}, 5 * 60 * 1000).unref();
+
 // ─── Auth Routes (no JWT required) ───────────────────────────────
 app.get('/api/auth/status', auth.getStatus);
 app.post('/api/auth/setup', auth.setup);
@@ -91,7 +125,8 @@ app.get('/api/saves/backup/status', auth.verifyMiddleware, savesAPI.getBackupSta
 app.post('/api/saves/backup', auth.verifyMiddleware, savesAPI.createBackup);
 app.post('/api/saves/upload', auth.verifyMiddleware, savesAPI.uploadSave);
 app.post('/api/saves/default', auth.verifyMiddleware, savesAPI.setDefaultSave);
-app.get('/api/saves/download/:filename', auth.verifyMiddleware, savesAPI.downloadBackup);
+app.post('/api/saves/download-token', auth.verifyMiddleware, savesAPI.createDownloadToken);
+app.get('/api/saves/download/:filename', savesAPI.downloadBackup);
 
 // Config API
 const configAPI = require('./api/config');

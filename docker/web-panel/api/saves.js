@@ -7,6 +7,7 @@ const os = require('os');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const config = require('../server');
+const auth = require('../auth');
 
 const BACKUP_STATUS_FILE = path.join(config.DATA_DIR, 'backup-status.json');
 let activeBackup = null;
@@ -789,12 +790,35 @@ function setDefaultSave(req, res) {
   }
 }
 
+function createDownloadToken(req, res) {
+  const filename = req.body && typeof req.body.filename === 'string'
+    ? req.body.filename.trim()
+    : '';
+
+  if (!filename) {
+    return res.status(400).json({ error: 'Missing filename' });
+  }
+
+  const safe = path.basename(filename);
+  if (!safe || safe !== filename || safe.startsWith('.')) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const token = auth.signDownloadToken(safe);
+  res.json({ token });
+}
+
 function downloadBackup(req, res) {
   const raw = req.params.filename;
   const filename = path.basename(raw);
 
   if (!filename || filename !== raw || filename.startsWith('.')) {
     return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const token = req.query && typeof req.query.token === 'string' ? req.query.token : '';
+  if (!token || !auth.verifyDownloadToken(token, filename)) {
+    return res.status(401).json({ error: 'Invalid or expired download token' });
   }
 
   const resolvedDir = path.resolve(config.BACKUPS_DIR);
@@ -817,5 +841,6 @@ module.exports = {
   createBackup,
   uploadSave,
   setDefaultSave,
+  createDownloadToken,
   downloadBackup,
 };

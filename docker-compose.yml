@@ -119,6 +119,7 @@ services:
       - PUBLIC_IP=${PUBLIC_IP:-}
       - MANAGER_URL=${MANAGER_URL:-http://stardew-manager:18700}
       - MANAGER_SECRET=${MANAGER_SECRET:-}
+      - API_RATE_LIMIT=${API_RATE_LIMIT:-}
 
     # Port mappings
     # 端口映射
