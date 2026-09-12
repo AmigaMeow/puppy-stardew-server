@@ -22,6 +22,11 @@ const GAME_DIR = process.env.GAME_DIR || '/home/steam/stardewvalley';
 const SMAPI_LOG = process.env.SMAPI_LOG || '/home/steam/.config/StardewValley/ErrorLogs/SMAPI-latest.txt';
 const ENV_FILE = process.env.ENV_FILE || '/home/steam/web-panel/data/runtime.env';
 
+function sanitizeErrorMessage(msg) {
+  if (typeof msg !== 'string') return 'Internal error';
+  return msg.replace(/\/(?:home|proc|tmp|var|etc|opt|usr)\b\S*/g, '<path>');
+}
+
 // Export paths for use by API modules
 const config = {
   PORT,
@@ -33,6 +38,7 @@ const config = {
   GAME_DIR,
   SMAPI_LOG,
   ENV_FILE,
+  sanitizeErrorMessage,
 };
 module.exports = config;
 
@@ -40,9 +46,22 @@ module.exports = config;
 const app = express();
 const server = http.createServer(app);
 
+// Security headers (equivalent to helmet defaults, no extra dependency)
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '0');
+  // Only effective behind a TLS-terminating reverse proxy; browsers ignore HSTS over plain HTTP
+  res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
 // Middleware
-app.use(express.json({ limit: '60mb' }));
-app.use(express.urlencoded({ extended: false, limit: '60mb' }));
+app.use(express.json({ limit: '70mb' }));
+app.use(express.urlencoded({ extended: false, limit: '70mb' }));
 
 // ─── Auth Routes (no JWT required) ───────────────────────────────
 app.get('/api/auth/status', auth.getStatus);

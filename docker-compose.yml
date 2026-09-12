@@ -22,6 +22,7 @@ services:
     environment:
       - PROJECT_DIR=${PWD}
       - COMPOSE_FILE=${PWD}/docker-compose.yml
+      - MANAGER_SECRET=${MANAGER_SECRET:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${PWD}:${PWD}:ro
@@ -117,6 +118,7 @@ services:
       # 仪表盘显示的公网联机 IP - 可选
       - PUBLIC_IP=${PUBLIC_IP:-}
       - MANAGER_URL=${MANAGER_URL:-http://stardew-manager:18700}
+      - MANAGER_SECRET=${MANAGER_SECRET:-}
 
     # Port mappings
     # 端口映射
@@ -131,7 +133,9 @@ services:
 
       # Prometheus metrics port (OPTIONAL - for monitoring)
       # Prometheus 指标端口（可选 - 用于监控）
-      - "9090:9090/tcp"
+      # Bound to localhost by default; set METRICS_BIND_HOST=0.0.0.0 to expose externally
+      # 默认绑定到 localhost；设置 METRICS_BIND_HOST=0.0.0.0 可对外暴露
+      - "${METRICS_BIND_HOST:-127.0.0.1}:9090:9090/tcp"
 
       # Web management panel (OPTIONAL - for web-based control)
       # Web 管理面板（可选 - 用于网页控制）

@@ -5,6 +5,7 @@
 
 const { spawn } = require('child_process');
 const { execSync } = require('child_process');
+const config = require('../server');
 
 // Only allow one terminal session at a time
 let activeTerminal = null;
@@ -71,7 +72,6 @@ function openTerminal(ws) {
     }
 
     // Start tailing the SMAPI log for output
-    const config = require('../server');
     const logPath = config.SMAPI_LOG;
     const tail = spawn('tail', ['-f', '-n', '30', logPath], {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -120,7 +120,7 @@ function openTerminal(ws) {
   } catch (e) {
     ws.send(JSON.stringify({
       type: 'terminal:error',
-      data: `Failed to open terminal: ${e.message}`,
+      data: `Failed to open terminal: ${config.sanitizeErrorMessage(e.message)}`,
     }));
   }
 }
@@ -150,7 +150,7 @@ function handleInput(ws, data) {
   } catch (e) {
     ws.send(JSON.stringify({
       type: 'terminal:error',
-      data: `Failed to send input: ${e.message}`,
+      data: `Failed to send input: ${config.sanitizeErrorMessage(e.message)}`,
     }));
   }
 }

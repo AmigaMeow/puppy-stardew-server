@@ -320,7 +320,7 @@ function updateConfig(req, res) {
       needsRestart: true,
     });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to update config', details: e.message });
+    res.status(500).json({ error: 'Failed to update config', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 

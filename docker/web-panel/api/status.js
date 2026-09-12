@@ -351,7 +351,7 @@ function restartServer(req, res) {
 
     res.json({ success: true, message: 'Game restart initiated' });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to restart server', details: e.message });
+    res.status(500).json({ error: 'Failed to restart server', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 
@@ -362,7 +362,7 @@ function restartContainer(req, res) {
     scheduleContainerRecreate(managerUrl).then(() => {
       res.json({ success: true, message: 'Container recreate initiated' });
     }).catch((error) => {
-      res.status(500).json({ error: 'Failed to recreate container', details: error.message });
+      res.status(500).json({ error: 'Failed to recreate container', details: config.sanitizeErrorMessage(error.message) });
     });
     return;
   }
@@ -383,7 +383,7 @@ function restartContainer(req, res) {
 
     res.json({ success: true, message: 'Container restart initiated' });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to restart container', details: e.message });
+    res.status(500).json({ error: 'Failed to restart container', details: config.sanitizeErrorMessage(e.message) });
   }
 }
 
@@ -409,6 +409,7 @@ function scheduleContainerRecreate(managerUrl) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(payload),
+        ...(process.env.MANAGER_SECRET ? { 'Authorization': `Bearer ${process.env.MANAGER_SECRET}` } : {}),
       },
       timeout: 5000,
     }, (response) => {

@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
 const { spawn } = require('child_process');
@@ -7,6 +8,7 @@ const PROJECT_DIR = process.env.PROJECT_DIR || '/workspace';
 const COMPOSE_FILE = process.env.COMPOSE_FILE || `${PROJECT_DIR}/docker-compose.yml`;
 const DEFAULT_ENV_FILE = `${PROJECT_DIR}/.env`;
 const RUNTIME_ENV_FILE = `${PROJECT_DIR}/data/panel/runtime.env`;
+const MANAGER_SECRET = process.env.MANAGER_SECRET || '';
 const ALLOWED_SERVICES = new Set(['stardew-server']);
 const SERVICE_CONTAINERS = {
   'stardew-server': 'puppy-stardew',
@@ -95,6 +97,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (MANAGER_SECRET) {
+    const authHeader = req.headers['authorization'] || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    const a = Buffer.from(token);
+    const b = Buffer.from(MANAGER_SECRET);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      sendJson(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+  }
+
   if (req.method === 'POST' && req.url === '/recreate') {
     try {
       const body = await readJson(req);
@@ -108,7 +121,8 @@ const server = http.createServer(async (req, res) => {
       recreateService(service);
       sendJson(res, 202, { success: true, service, action: 'recreate' });
     } catch (error) {
-      sendJson(res, 500, { error: error.message || 'Failed to schedule recreate' });
+      var msg = error.message || 'Failed to schedule recreate';
+      sendJson(res, 500, { error: msg.replace(/\/(?:home|proc|tmp|var|etc|opt|usr)\b\S*/g, '<path>') });
     }
     return;
   }
