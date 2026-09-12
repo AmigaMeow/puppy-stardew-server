@@ -201,7 +201,7 @@ EOPROM
 {
   "timestamp": "$timestamp",
   "server": {
-    "version": "1.1.0",
+    "version": "1.1.1",
     "game_running": $([ "$game_running" = "1" ] && echo "true" || echo "false"),
     "uptime_seconds": $uptime
   },
@@ -233,7 +233,22 @@ serve_metrics() {
     log "Starting Prometheus metrics HTTP server on port $METRICS_PORT..."
     log "Prometheus 指标 HTTP 服务启动于端口 $METRICS_PORT..."
 
+    local nc_warned=0
     while true; do
+        # Issue #4: without nc the serve command would fail instantly and this
+        # loop would busy-spin on one core. Warn once and poll slowly instead.
+        if ! command -v nc >/dev/null 2>&1; then
+            if [ "$nc_warned" -eq 0 ]; then
+                nc_warned=1
+                log "WARNING: nc (netcat) is not installed - Prometheus metrics endpoint disabled."
+                log "警告：未安装 nc (netcat)——Prometheus 指标端点已停用。"
+                log "Install netcat-openbsd and restart the container to enable it."
+                log "请安装 netcat-openbsd 并重启容器以启用。"
+            fi
+            sleep 30
+            continue
+        fi
+
         # Read metrics file content
         local body=""
         if [ -f "$METRICS_FILE" ]; then
@@ -247,6 +262,7 @@ serve_metrics() {
         # Serve one request via nc (netcat-openbsd)
         # netcat-openbsd: -l PORT (no -p flag with -l)
         # -q 1: quit 1 second after EOF, -w 5: timeout 5s
+        local nc_started=$(date +%s)
         {
             echo -e "HTTP/1.1 200 OK\r"
             echo -e "Content-Type: text/plain; version=0.0.4; charset=utf-8\r"
@@ -255,6 +271,13 @@ serve_metrics() {
             echo -e "\r"
             echo -n "$body"
         } | nc -l "$METRICS_PORT" -q 1 -w 5 >/dev/null 2>&1
+
+        # A successful serve blocks (scrape or -w 5 timeout). If nc exited
+        # within the same second it failed (e.g. port busy) - back off so the
+        # loop never spins on a permanently failing command.
+        if [ $(( $(date +%s) - nc_started )) -lt 1 ]; then
+            sleep 5
+        fi
     done
 }
 

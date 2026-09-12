@@ -1,6 +1,6 @@
 #!/bin/bash
-# Puppy Stardew Server Entrypoint Script - v1.1.0
-# 小狗星谷服务器启动脚本 - v1.1.0
+# Puppy Stardew Server Entrypoint Script - v1.1.1
+# 小狗星谷服务器启动脚本 - v1.1.1
 
 # DO NOT use set -e - we need manual error handling
 # 不使用 set -e - 需要手动错误处理
@@ -342,8 +342,8 @@ fi
 # =============================================
 
 log_step "================================================"
-log_step "  Puppy Stardew Server v1.1.0 Starting..."
-log_step "  小狗星谷服务器 v1.1.0 启动中..."
+log_step "  Puppy Stardew Server v1.1.1 Starting..."
+log_step "  小狗星谷服务器 v1.1.1 启动中..."
 log_step "================================================"
 
 # Verify we're running as steam user

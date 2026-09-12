@@ -14,7 +14,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 LABEL maintainer="truemanlive" \
       description="Stardew Valley dedicated server with auto-pause and instant sleep" \
-      version="1.1.0"
+      version="1.1.1"
 
 # Install all dependencies in a single layer and clean up
 # 在单层中安装所有依赖并清理

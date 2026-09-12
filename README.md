@@ -150,6 +150,15 @@ Save archive upload, default save selection, backup execution, and downloadable 
 
 ## Release Highlights
 
+### v1.1.1 (September 2026)
+
+First release since the project was frozen as best-effort maintained. Focuses on security hardening and reported bug fixes.
+
+- **Security hardening** for the web panel and manager service: optional manager shared secret, security headers, sanitized errors, per-IP API rate limiting, and short-lived signed tokens for backup downloads.
+- **Metrics endpoint no longer exposed by default** — the Prometheus port now binds to `127.0.0.1` unless `METRICS_BIND_HOST=0.0.0.0` is set.
+- **SMAPI updated to 4.5.2** (compatible with the shipped game 1.6.15).
+- **Fixed ~25% CPU busy-loop** in the status reporter when `nc` (netcat) is missing from the image (#4).
+
 ### v1.0.77 (March 2026)
 
 This release focused on closing the gap between a working prototype and an operator-friendly server distribution.

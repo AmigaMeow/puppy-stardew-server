@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.1.1 (September 2026)
+
+First release since the project was frozen as best-effort maintained (v1.1.0 was an unreleased version bump). Ships the accumulated security hardening, dependency updates, and bug fixes.
+
+### Security
+- Hardened the web panel and manager service: optional manager shared secret (`MANAGER_SECRET`), security response headers, sanitized error messages, and hardened backup download path resolution (#7, #8).
+- Backup downloads now use short-lived signed download tokens instead of long-lived JWTs in URLs (#7).
+- Added per-IP API rate limiting for the web panel, configurable via `API_RATE_LIMIT` (default 120 req/min) (#7).
+- Prometheus metrics port now binds to `127.0.0.1` by default; set `METRICS_BIND_HOST=0.0.0.0` to expose it to a remote scraper (#8).
+- Status endpoint validates `pgrep` output as a bare numeric PID before use.
+
+### Updated
+- SMAPI 4.3.2 → 4.5.2 (requires Stardew Valley 1.6.14+; server ships game 1.6.15) (#9).
+- VNC password is auto-generated when `VNC_PASSWORD` is left empty and persisted to `web-panel/data/vnc_password.txt` (#10, #11).
+
+### Bug Fixes
+- Fixed ~25% CPU busy-loop in the status reporter when `nc` (netcat) is missing from the image (#4): the metrics loop now warns once and polls slowly, and backs off if `nc` fails immediately.
+- Fixed player count arithmetic error in the status reporter when the SMAPI log has zero join/quit matches (follow-up to #9).
+
 ## v1.0.77 (March 2026)
 
 ### Bug Fixes
