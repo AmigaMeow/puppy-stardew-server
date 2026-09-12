@@ -3,7 +3,7 @@
  */
 
 const fs = require('fs');
-const { execSync, spawnSync } = require('child_process');
+const { execSync, execFileSync, spawnSync } = require('child_process');
 const http = require('http');
 const https = require('https');
 const config = require('../server');
@@ -221,29 +221,30 @@ function collectStatus(req = null) {
 
   // Check if game process is running (and collect live metrics if no status.json)
   try {
-    const pidStr = execSync('pgrep -f StardewModdingAPI', { encoding: 'utf-8' }).trim().split('\n')[0];
+    const pidStr = execFileSync('pgrep', ['-f', 'StardewModdingAPI'], { encoding: 'utf-8' }).trim().split('\n')[0];
     status.gameRunning = true;
 
-    // Only use pgrep output in commands when it is a bare numeric PID
+    // Only use pgrep output in file/command access when it is a bare numeric PID
     const pid = /^\d+$/.test(pidStr) ? pidStr : '';
 
     // If we didn't get data from status.json, collect live
     if (status.cpu === 0 && status.memory.used === 0 && pid) {
       try {
-        const cpuStr = execSync('ps -p ' + pid + ' -o %cpu= 2>/dev/null', { encoding: 'utf-8' }).trim();
+        const cpuStr = execFileSync('ps', ['-p', pid, '-o', '%cpu='], { encoding: 'utf-8' }).trim();
         status.cpu = parseFloat(cpuStr) || 0;
       } catch (e2) {}
       try {
-        const rssStr = execSync('grep VmRSS /proc/' + pid + '/status 2>/dev/null | awk \'{print $2}\'', { encoding: 'utf-8' }).trim();
-        if (rssStr) status.memory.used = Math.round(parseInt(rssStr, 10) / 1024);
+        const procStatus = fs.readFileSync(`/proc/${pid}/status`, 'utf-8');
+        const rssMatch = procStatus.match(/^VmRSS:\s+(\d+)\s+kB$/m);
+        if (rssMatch) status.memory.used = Math.round(parseInt(rssMatch[1], 10) / 1024);
       } catch (e2) {}
     }
 
     // If no uptime from status.json, compute from process start time
     if (status.uptime === 0 && pid) {
       try {
-        const startTime = execSync('stat -c %Y /proc/' + pid + ' 2>/dev/null', { encoding: 'utf-8' }).trim();
-        if (startTime) status.uptime = Math.floor(Date.now() / 1000) - parseInt(startTime, 10);
+        const startTime = Math.floor(fs.statSync(`/proc/${pid}`).mtimeMs / 1000);
+        status.uptime = Math.floor(Date.now() / 1000) - startTime;
       } catch (e2) {}
     }
   } catch (e) {
