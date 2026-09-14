@@ -658,6 +658,16 @@ fi
 # Start status reporter (Prometheus metrics + JSON status)
 log_info "Starting status reporter (metrics port: ${METRICS_PORT:-9090})..."
 /home/steam/scripts/status-reporter.sh &
+# ===== 新增：创建命名管道并确保权限 =====
+PIPE_FILE="/home/steam/smapi_stdin.fifo"
+if [ ! -p "$PIPE_FILE" ]; then
+    mkfifo "$PIPE_FILE"
+    chmod 666 "$PIPE_FILE"
+fi
+
+# 核心技巧：用一个死循环的 tail 保持管道始终打开，防止游戏重启时管道断开
+tail -f "$PIPE_FILE" > /dev/null &
+# ========================================
 
 # Start web panel
 log_info "Starting web management panel (port: 18642)..."
@@ -680,8 +690,8 @@ if [ "$ENABLE_CRASH_RESTART" = "true" ]; then
     log_info "启动游戏（崩溃自动重启模式）..."
 
     # Use crash-monitor.sh which wraps game in restart loop
-    exec /home/steam/scripts/crash-monitor.sh
+    exec /home/steam/scripts/crash-monitor.sh < "$PIPE_FILE"
 else
     # Run game with exec (traditional, container exits on crash)
-    exec ./StardewModdingAPI --server
+    exec ./StardewModdingAPI --server < "$PIPE_FILE"
 fi
