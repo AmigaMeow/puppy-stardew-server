@@ -1,8 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Project
+- Resumed active development: the feature freeze is lifted, new features are planned again, and community contributions (issues and PRs) are explicitly welcome. The project remains fully open source under MIT, free for personal and commercial use.
+
 ## v1.1.1 (September 2026)
 
-First release since the project was frozen as best-effort maintained (v1.1.0 was an unreleased version bump). Ships the accumulated security hardening, dependency updates, and bug fixes.
+First tagged release of 2026. Ships the accumulated security hardening, dependency updates, and bug fixes.
 
 ### Security
 - Hardened the web panel and manager service: optional manager shared secret (`MANAGER_SECRET`), security response headers, sanitized error messages, and hardened backup download path resolution (#7, #8).

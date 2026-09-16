@@ -27,15 +27,15 @@ English | [中文](README_CN.md)
 
 ---
 
-## Project Status: Feature-Frozen (Best-Effort Maintenance)
+## Project Status: Actively Maintained & Fully Open Source
 
-> **This project is feature-frozen and maintained on a best-effort basis.** It remains usable and accepts security/compatibility fixes, but no new features are planned.
+> **This project is actively developed and welcomes community contributions** — bug fixes, security patches, and **new features** are all fair game. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Licensed under **MIT**: free to use, modify, and redistribute, including for **commercial purposes**.
 
 **What this project is.** A Dockerized, *always-on dedicated host* for Stardew Valley. The container runs the actual game and acts as the multiplayer host. This works well for casual day-to-day play and for keeping a world available 24/7.
 
-**The fundamental limitation you should understand before relying on it.** Stardew Valley has no real "dedicated server" concept — **the host is a full game participant**, not a passive server process. Whenever the game takes control of the host (festivals, non-skippable events, certain cutscenes, forced animations), an unattended headless host can stall, which blocks connected players. The bundled mods paper over the common cases (hiding the host, instant sleep, skipping *skippable* events) but **cannot fully solve this** — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md). In particular, **festivals and non-skippable events are not handled**, and a container restart currently requires a one-time manual save reload to re-init multiplayer.
+**The fundamental limitation you should understand before relying on it.** Stardew Valley has no real "dedicated server" concept — **the host is a full game participant**, not a passive server process. Whenever the game takes control of the host (festivals, non-skippable events, certain cutscenes, forced animations), an unattended headless host can stall, which blocks connected players. The bundled mods paper over the common cases (hiding the host, instant sleep, skipping *skippable* events) but **cannot fully solve this** — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md). In particular, **festivals and non-skippable events are not handled**, and a container restart currently requires a one-time manual save reload to re-init multiplayer. Ideas and PRs that improve on any of this are especially welcome.
 
-**Best fit:** hobbyist setups that want a 24/7 persistent world and accept best-effort behavior with occasional manual intervention.
+**Best fit:** hobbyist and community setups that want a 24/7 persistent world and can accept occasional manual intervention.
 
 **If your goal is simply "let a few friends play together easily across platforms (PC / Mac / Android / iOS)",** a *human-hosted* game combined with a virtual-LAN / relay layer (so clients join over IP across NAT) is far more robust, because a real human at the host handles festivals and events naturally. That direction avoids the engine limitations above entirely.
 
@@ -152,7 +152,7 @@ Save archive upload, default save selection, backup execution, and downloadable 
 
 ### v1.1.1 (September 2026)
 
-First release since the project was frozen as best-effort maintained. Focuses on security hardening and reported bug fixes.
+First tagged release of 2026. Focuses on security hardening and reported bug fixes.
 
 - **Security hardening** for the web panel and manager service: optional manager shared secret, security headers, sanitized errors, per-IP API rate limiting, and short-lived signed tokens for backup downloads.
 - **Metrics endpoint no longer exposed by default** — the Prometheus port now binds to `127.0.0.1` unless `METRICS_BIND_HOST=0.0.0.0` is set.
